@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f766e">
+  <title>BKU UPZ Kecamatan Cipeundeuy</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div id="loginView" class="login-wrap">
+    <section class="login-card">
+      <div class="brand-mark">UPZ</div>
+      <p class="eyebrow">SISTEM INFORMASI KEUANGAN</p>
+      <h1>Buku Kas Umum</h1>
+      <p class="muted">Unit Pengumpul Zakat Kecamatan Cipeundeuy<br>Kabupaten Subang</p>
+      <form id="loginForm">
+        <label>Email<input id="email" type="email" autocomplete="username" required placeholder="Email akun Supabase"></label>
+        <label>Password<input id="password" type="password" autocomplete="current-password" required placeholder="Password"></label>
+        <button class="primary full" type="submit">Masuk ke Aplikasi</button>
+      </form>
+      <p id="loginMessage" class="message" aria-live="polite"></p>
+      <small class="muted">Akun dibuat dan dikelola melalui Supabase Authentication.</small>
+    </section>
+  </div>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="side-brand"><div class="brand-mark small">UPZ</div><div><b>BKU UPZ</b><small>Cipeundeuy · Subang</small></div></div>
+      <nav>
+        <button class="nav-item active" data-page="dashboard">▦ <span>Dashboard</span></button>
+        <button class="nav-item" data-page="penghimpunan">＋ <span>Penghimpunan</span></button>
+        <button class="nav-item" data-page="pendistribusian">− <span>Pendistribusian</span></button>
+        <button class="nav-item" data-page="bku">▤ <span>Buku Kas Umum</span></button>
+      </nav>
+      <div class="side-bottom"><span id="userLabel">Pengguna</span><button id="logoutBtn" class="logout">Keluar ↗</button></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><p class="eyebrow">UNIT PENGUMPUL ZAKAT</p><h2 id="pageTitle">Dashboard</h2></div>
+        <div class="user-pill"><span class="status-dot"></span><span id="roleLabel">Pengguna</span></div>
+      </header>
+
+      <section id="dashboardPage" class="page">
+        <div class="welcome"><div><p class="eyebrow light">RINGKASAN KEUANGAN</p><h1>Assalamu’alaikum</h1><p>Pantau penghimpunan dan pendistribusian dana UPZ.</p></div><div class="welcome-icon">☪</div></div>
+        <div class="stats-grid">
+          <article class="stat-card"><span>Saldo Kas</span><strong id="saldo">Rp0</strong><small>Saldo awal + penerimaan − pengeluaran</small></article>
+          <article class="stat-card"><span>Total Penghimpunan</span><strong id="totalMasuk">Rp0</strong><small>Akumulasi penerimaan uang</small></article>
+          <article class="stat-card"><span>Total Pendistribusian</span><strong id="totalKeluar">Rp0</strong><small>Akumulasi penyaluran uang</small></article>
+          <article class="stat-card"><span>Jumlah Transaksi</span><strong id="jumlahTransaksi">0</strong><small>Penghimpunan dan pendistribusian</small></article>
+        </div>
+        <div class="panel">
+          <div class="panel-heading"><div><h3>Transaksi Terbaru</h3><p class="muted">Lima transaksi terakhir</p></div><button class="text-button" data-goto="bku">Lihat Buku Kas →</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Jenis</th><th>Pihak</th><th>Keterangan</th><th class="right">Jumlah</th></tr></thead><tbody id="latestRows"><tr><td colspan="5" class="empty">Belum ada transaksi.</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+      <section id="penghimpunanPage" class="page hidden">
+        <div class="section-intro"><h3>Input Penghimpunan</h3><p>Catat penerimaan zakat, infak, dan sedekah.</p></div>
+        <form id="incomeForm" class="panel form-grid">
+          <label>Tanggal<input name="tanggal" type="date" required></label>
+          <label>Desa<select name="desa_id" class="desa-options"><option value="">Pilih desa</option></select></label>
+          <label>Nama Muzaki / Sumber<input name="nama_muzaki" placeholder="Nama muzaki atau sumber"></label>
+          <label>Jenis Pengumpulan<select name="jenis_pengumpulan" required><option value="Zakat Fitrah">Zakat Fitrah</option><option value="Zakat Mal">Zakat Mal</option><option value="Infak">Infak</option><option value="Sedekah">Sedekah</option><option value="BIS Ramadhan">BIS Ramadhan</option><option value="Lainnya">Lainnya</option></select></label>
+          <label>Bentuk Penerimaan<select name="bentuk_penerimaan"><option>Uang</option><option>Beras</option><option>Lainnya</option></select></label>
+          <label>Jumlah / Nilai<input name="jumlah" type="number" min="1" step="0.01" required placeholder="Contoh: 500000"></label>
+          <label>Satuan<input name="satuan" value="Rupiah" required></label>
+          <label>Tahun Hijriah<input name="tahun_hijriah" placeholder="Contoh: 1448 H"></label>
+          <label class="span-2">Keterangan<textarea name="keterangan" rows="2"></textarea></label>
+          <div class="span-2 form-actions"><button class="primary" type="submit">Simpan Penghimpunan</button><span id="incomeMessage" class="message"></span></div>
+        </form>
+      </section>
+
+      <section id="pendistribusianPage" class="page hidden">
+        <div class="section-intro"><h3>Input Pendistribusian</h3><p>Catat penyaluran dana kepada mustahik/penerima manfaat.</p></div>
+        <form id="expenseForm" class="panel form-grid">
+          <label>Tanggal<input name="tanggal" type="date" required></label>
+          <label>Desa<select name="desa_id" class="desa-options"><option value="">Pilih desa</option></select></label>
+          <label>Nama Penerima<input name="nama_penerima" required placeholder="Nama penerima manfaat"></label>
+          <label>Kategori Mustahik<select name="kategori_mustahik"><option value="">Pilih kategori</option><option>Fakir</option><option>Miskin</option><option>Amil</option><option>Mualaf</option><option>Riqab</option><option>Gharim</option><option>Fisabilillah</option><option>Ibnu Sabil</option><option>Lainnya</option></select></label>
+          <label>Sumber Pendistribusian<select name="sumber_pendistribusian" required><option value="Zakat Mal">Zakat Mal</option><option value="BIS Ramadhan">BIS Ramadhan</option></select></label>
+          <label>Bentuk Penyaluran<select name="bentuk_penyaluran"><option>Uang</option><option>Beras</option><option>Barang</option><option>Lainnya</option></select></label>
+          <label>Jumlah / Nilai<input name="jumlah" type="number" min="1" step="0.01" required placeholder="Contoh: 250000"></label>
+          <label>Satuan<input name="satuan" value="Rupiah" required></label>
+          <label>Tahun Hijriah<input name="tahun_hijriah" placeholder="Contoh: 1448 H"></label>
+          <label class="span-2">Keterangan<textarea name="keterangan" rows="2"></textarea></label>
+          <div class="span-2 form-actions"><button class="primary" type="submit">Simpan Pendistribusian</button><span id="expenseMessage" class="message"></span></div>
+        </form>
+      </section>
+
+      <section id="bkuPage" class="page hidden">
+        <div class="section-intro"><h3>Buku Kas Umum</h3><p>Daftar transaksi penghimpunan dan pendistribusian.</p></div>
+        <div class="panel">
+          <div class="toolbar"><input id="searchBku" placeholder="Cari nama, kategori, keterangan..."><button id="refreshBtn" class="secondary">Muat Ulang</button></div>
+          <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>No. Transaksi</th><th>Jenis</th><th>Kategori</th><th>Pihak</th><th class="right">Penerimaan</th><th class="right">Pengeluaran</th></tr></thead><tbody id="bkuRows"><tr><td colspan="7" class="empty">Memuat data...</td></tr></tbody></table></div>
+        </div>
+      </section>
+      <footer>© <span id="year"></span> BKU UPZ Kecamatan Cipeundeuy · Kabupaten Subang</footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="assets/config.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
