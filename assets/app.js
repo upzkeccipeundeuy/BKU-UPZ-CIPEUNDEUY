@@ -3,7 +3,7 @@
   const cfg = window.SUPABASE_CONFIG || {};
   const client = supabase.createClient(cfg.url, cfg.publishableKey);
   const $ = (id) => document.getElementById(id);
-  let currentUser = null, currentProfile = null, bkuCache = [];
+  let currentUser = null, currentProfile = null, bkuCache = [], upzProfile = null;
 
   const rupiah = (n) => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n||0));
   const dateNow = () => new Date().toLocaleDateString('en-CA');
@@ -137,12 +137,76 @@
     w.document.write(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Kwitansi ${escapeHtml(r.nomor_transaksi||'')}</title><style>body{font:14px Arial;color:#172b2a;padding:30px}.receipt{max-width:700px;margin:auto;border:1px solid #aab8b2;padding:30px}.head{text-align:center;border-bottom:3px double #0f766e;padding-bottom:15px}.head h2{margin:0;color:#0f766e}.code{text-align:right;font-weight:bold;margin:20px 0}.grid{display:grid;grid-template-columns:180px 1fr;gap:12px}.amount{font-size:22px;font-weight:bold;border:1px dashed #0f766e;padding:15px;margin-top:25px}.sign{display:flex;justify-content:space-between;text-align:center;margin-top:70px}.sign div{width:40%}@media print{body{padding:0}.receipt{border:0}}</style></head><body><article class="receipt"><header class="head"><h2>UPZ KECAMATAN CIPEUNDEUY</h2><p>KABUPATEN SUBANG</p><b>BUKTI ${income?'PENERIMAAN':'PENGELUARAN'}</b></header><div class="code">No. ${escapeHtml(r.nomor_transaksi||'-')}</div><div class="grid"><b>Tanggal</b><span>${escapeHtml(r.tanggal||'-')}</span><b>Jenis / Kategori</b><span>${escapeHtml(r.kategori||'-')}</span><b>${income?'Nama Muzaki / Sumber':'Nama Penerima'}</b><span>${escapeHtml(r.pihak||'-')}</span><b>Keterangan</b><span>${escapeHtml(r.keterangan||'-')}</span></div><div class="amount">Jumlah: ${rupiah(amount)}</div><p>Terbilang: ______________________________________________ rupiah</p><div class="sign"><div>Yang menyerahkan / menerima<br><br><br><b>${escapeHtml(r.pihak||'')}</b></div><div>Petugas UPZ Kecamatan Cipeundeuy<br><br><br><b>(................................)</b></div></div></article><script>window.onload=()=>window.print()</script></body></html>`);
     w.document.close();
   }
+
+  async function loadUpzProfile(){
+    const {data,error}=await client.from('upz_profile').select('*').eq('id',1).maybeSingle();
+    if(error){toast('Profil UPZ belum siap. Jalankan SQL profil_upz.sql terlebih dahulu.');return}
+    upzProfile=data||{};
+    $('profileNama').value=upzProfile.nama_upz||'';
+    $('profileAlamat').value=upzProfile.alamat||'';
+    $('profileTelepon').value=upzProfile.telepon||'';
+    $('profileEmail').value=upzProfile.email||'';
+    $('profileDeskripsi').value=upzProfile.deskripsi||'';
+    $('structureText').value=(upzProfile.struktur||[]).map(x=>`${x.jabatan||''} | ${x.nama||''}`).join('\n');
+    renderStructure();
+    updateLogoPreview(upzProfile.logo_url||'');
+  }
+  function updateLogoPreview(url){
+    const img=$('profileLogoPreview'),fallback=$('profileLogoFallback');
+    if(url){img.src=url;img.classList.remove('hidden');fallback.classList.add('hidden')}
+    else{img.removeAttribute('src');img.classList.add('hidden');fallback.classList.remove('hidden')}
+  }
+  function parseStructure(){
+    return $('structureText').value.split(/\r?\n/).map(line=>line.trim()).filter(Boolean).map(line=>{
+      const parts=line.split('|');return {jabatan:(parts.shift()||'').trim(),nama:parts.join('|').trim()};
+    }).filter(x=>x.jabatan&&x.nama);
+  }
+  function renderStructure(){
+    const rows=(upzProfile?.struktur||[]);
+    $('structurePreview').innerHTML=rows.length?`<div class="structure-grid">${rows.map(x=>`<article class="structure-card"><span>${escapeHtml(x.jabatan)}</span><b>${escapeHtml(x.nama)}</b></article>`).join('')}</div>`:'<p class="muted">Struktur organisasi belum diisi.</p>';
+  }
+  $('upzProfileForm').addEventListener('submit',async e=>{
+    e.preventDefault();message('profileMessage','Menyimpan profil...');
+    const payload={id:1,nama_upz:$('profileNama').value.trim(),alamat:$('profileAlamat').value.trim(),telepon:$('profileTelepon').value.trim(),email:$('profileEmail').value.trim(),deskripsi:$('profileDeskripsi').value.trim(),updated_at:new Date().toISOString()};
+    try{
+      const {data,error}=await client.from('upz_profile').upsert(payload,{onConflict:'id'}).select().single();
+      if(error)throw error;upzProfile={...(upzProfile||{}),...data};message('profileMessage','Profil berhasil disimpan.');toast('Profil UPZ diperbarui.');
+    }catch(err){message('profileMessage','Gagal menyimpan: '+err.message,true)}
+  });
+  $('structureForm').addEventListener('submit',async e=>{
+    e.preventDefault();const struktur=parseStructure();
+    if($('structureText').value.trim()&&struktur.length===0){message('structureMessage','Format belum benar. Gunakan Jabatan | Nama.',true);return}
+    message('structureMessage','Menyimpan struktur...');
+    try{
+      const {error}=await client.from('upz_profile').upsert({id:1,struktur,updated_at:new Date().toISOString()},{onConflict:'id'});
+      if(error)throw error;upzProfile={...(upzProfile||{}),struktur};renderStructure();message('structureMessage','Struktur berhasil disimpan.');toast('Struktur UPZ diperbarui.');
+    }catch(err){message('structureMessage','Gagal menyimpan: '+err.message,true)}
+  });
+  $('uploadLogoBtn').addEventListener('click',async()=>{
+    const file=$('profileLogoFile').files[0];
+    if(!file){message('logoMessage','Pilih file JPG atau PNG terlebih dahulu.',true);return}
+    if(!['image/jpeg','image/png'].includes(file.type)){message('logoMessage','Format harus JPG atau PNG.',true);return}
+    if(file.size>2*1024*1024){message('logoMessage','Ukuran file maksimal 2 MB.',true);return}
+    message('logoMessage','Mengunggah logo...');
+    try{
+      const ext=file.type==='image/png'?'png':'jpg',path=`logo/upz-logo-${Date.now()}.${ext}`;
+      const {error:uploadError}=await client.storage.from('upz-assets').upload(path,file,{contentType:file.type,upsert:true});
+      if(uploadError)throw uploadError;
+      const {data}=client.storage.from('upz-assets').getPublicUrl(path);
+      const logo_url=data.publicUrl;
+      const {error}=await client.from('upz_profile').upsert({id:1,logo_url,updated_at:new Date().toISOString()},{onConflict:'id'});
+      if(error)throw error;
+      upzProfile={...(upzProfile||{}),logo_url};updateLogoPreview(logo_url);$('profileLogoFile').value='';
+      message('logoMessage','Logo berhasil diunggah.');toast('Logo UPZ diperbarui.');
+    }catch(err){message('logoMessage','Gagal mengunggah: '+err.message,true)}
+  });
   function navigate(page){
     document.querySelectorAll('.page').forEach(p=>p.classList.add('hidden'));
     $(page+'Page').classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
-    $('pageTitle').textContent=({dashboard:'Dashboard',penghimpunan:'Penghimpunan',pendistribusian:'Pendistribusian',bku:'Buku Kas Umum'})[page];
+    $('pageTitle').textContent=({dashboard:'Dashboard',penghimpunan:'Penghimpunan',pendistribusian:'Pendistribusian',bku:'Buku Kas Umum',profil:'Profil UPZ'})[page];
     if(page==='bku') loadBku().catch(e=>toast(e.message));
+    if(page==='profil') loadUpzProfile().catch(e=>toast(e.message));
   }
   function formObject(form){
     const o=Object.fromEntries(new FormData(form).entries());

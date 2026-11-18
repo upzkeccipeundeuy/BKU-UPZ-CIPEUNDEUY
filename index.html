@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f766e">
   <meta name="description" content="Transparansi penghimpunan dan pendistribusian zakat UPZ Kecamatan Cipeundeuy.">
   <title>BKU UPZ Kecamatan Cipeundeuy</title>
-  <link rel="stylesheet" href="assets/style.css?v=20261118-3">
+  <link rel="stylesheet" href="assets/style.css?v=20261118-4">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -54,6 +54,7 @@
         <button class="nav-item" data-page="penghimpunan">＋ <span>Penghimpunan</span></button>
         <button class="nav-item" data-page="pendistribusian">− <span>Pendistribusian</span></button>
         <button class="nav-item" data-page="bku">▤ <span>Buku Kas Umum</span></button>
+        <button class="nav-item" data-page="profil">♙ <span>Profil UPZ</span></button>
       </nav>
       <div class="side-bottom"><span id="userLabel">Pengguna</span><button id="logoutBtn" class="logout">Keluar ↗</button></div>
     </aside>
@@ -134,11 +135,46 @@
           <div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>No. Transaksi</th><th>Jenis</th><th>Kategori</th><th>Pihak</th><th class="right">Penerimaan</th><th class="right">Pengeluaran</th><th class="no-print">Aksi</th></tr></thead><tbody id="bkuRows"><tr><td colspan="8" class="empty">Memuat data...</td></tr></tbody></table></div>
         </div>
       </section>
+
+
+      <section id="profilPage" class="page hidden">
+        <div class="section-intro"><h3>Profil UPZ</h3><p>Kelola identitas, logo, dan struktur organisasi UPZ Kecamatan Cipeundeuy.</p></div>
+        <div class="profile-layout">
+          <section class="panel">
+            <div class="panel-heading"><div><h3>Identitas UPZ</h3><p class="muted">Informasi yang ditampilkan pada profil organisasi.</p></div></div>
+            <form id="upzProfileForm" class="form-grid">
+              <label class="span-2">Nama UPZ<input name="nama_upz" id="profileNama" maxlength="150" placeholder="Nama organisasi"></label>
+              <label class="span-2">Alamat<textarea name="alamat" id="profileAlamat" rows="2" maxlength="500" placeholder="Alamat sekretariat"></textarea></label>
+              <label>Nomor telepon<input name="telepon" id="profileTelepon" maxlength="40" placeholder="Nomor kontak"></label>
+              <label>Email<input name="email" id="profileEmail" type="email" maxlength="150" placeholder="Email resmi"></label>
+              <label class="span-2">Deskripsi / profil singkat<textarea name="deskripsi" id="profileDeskripsi" rows="3" maxlength="1200" placeholder="Profil singkat UPZ"></textarea></label>
+              <div class="span-2 form-actions"><button class="primary" type="submit">Simpan Profil</button><span id="profileMessage" class="message"></span></div>
+            </form>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><div><h3>Logo UPZ</h3><p class="muted">Format JPG, JPEG, atau PNG. Maksimal 2 MB.</p></div></div>
+            <div class="logo-editor">
+              <div class="logo-preview-wrap"><img id="profileLogoPreview" alt="Pratinjau logo UPZ" class="profile-logo-preview hidden"><div id="profileLogoFallback" class="profile-logo-fallback">UPZ</div></div>
+              <label class="file-picker">Pilih Logo<input id="profileLogoFile" type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png"></label>
+              <button id="uploadLogoBtn" type="button" class="secondary">Unggah Logo</button>
+              <p id="logoMessage" class="message" aria-live="polite"></p>
+            </div>
+          </section>
+          <section class="panel span-2">
+            <div class="panel-heading"><div><h3>Struktur Organisasi UPZ</h3><p class="muted">Isi satu baris untuk setiap jabatan dengan format: Jabatan | Nama.</p></div></div>
+            <form id="structureForm">
+              <label>Susunan pengurus<textarea id="structureText" rows="9" placeholder="Ketua | Nama Ketua&#10;Sekretaris | Nama Sekretaris&#10;Bendahara | Nama Bendahara&#10;Anggota | Nama Anggota"></textarea></label>
+              <div class="form-actions"><button class="primary" type="submit">Simpan Struktur</button><span id="structureMessage" class="message"></span></div>
+            </form>
+            <div id="structurePreview" class="structure-preview"><p class="muted">Struktur organisasi belum diisi.</p></div>
+          </section>
+        </div>
+      </section>
       <footer>© <span id="year"></span> BKU UPZ Kecamatan Cipeundeuy · Kabupaten Subang</footer>
     </main>
   </div>
   <div id="toast" class="toast" role="status"></div>
   <script src="assets/config.js"></script>
-  <script src="assets/app.js?v=20261118-3"></script>
+  <script src="assets/app.js?v=20261118-4"></script>
 </body>
 </html>
