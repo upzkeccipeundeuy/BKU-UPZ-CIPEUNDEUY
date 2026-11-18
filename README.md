@@ -52,3 +52,7 @@ Alternatif: drag-and-drop folder project ke Netlify Deploys.
 - Policy SQL sebelumnya membatasi pembacaan ke role authenticated, sehingga dashboard tidak terbuka untuk pengunjung anonim.
 - Versi awal ini belum menyediakan edit/hapus transaksi, ekspor PDF/Excel, kuitansi, atau modul laporan A2/B2/C2A/C2B.
 - Sebelum digunakan untuk pencatatan resmi, lakukan pengujian dan validasi laporan dengan bendahara/pengurus UPZ.
+
+## Menambahkan pilihan Desa "Lainnya"
+Jalankan `supabase/add_desa_lainnya.sql` di Supabase → SQL Editor → Run.
+Dropdown Desa pada formulir Penghimpunan dan Pendistribusian mengambil pilihan dari tabel `data_upz_desa`, sehingga opsi "Lainnya" akan muncul setelah SQL dijalankan.
