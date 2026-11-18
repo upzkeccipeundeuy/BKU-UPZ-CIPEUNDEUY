@@ -9,7 +9,26 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <div id="loginView" class="login-wrap">
+  <div id="publicView" class="public-shell">
+    <header class="public-topbar">
+      <div class="public-brand"><div class="brand-mark small">UPZ</div><div><b>UPZ CIPEUNDEUY</b><small>Kecamatan Cipeundeuy · Kabupaten Subang</small></div></div>
+      <button id="openLoginBtn" class="primary">Login Admin</button>
+    </header>
+    <main class="public-main">
+      <section class="public-hero"><div><p class="eyebrow light">TRANSPARANSI PENGELOLAAN ZAKAT</p><h1>Zakat Amanah,<br>Umat Sejahtera.</h1><p>Informasi ringkas penghimpunan dan pendistribusian dana UPZ Kecamatan Cipeundeuy.</p><span class="public-update" id="publicUpdated">Memuat ringkasan data...</span></div><div class="hero-emblem" aria-hidden="true">☪</div></section>
+      <section class="public-section"><div class="section-heading"><p class="eyebrow">LAPORAN TERBUKA</p><h2>Ringkasan Keuangan</h2><p>Data ditampilkan dalam bentuk rekapitulasi tanpa membuka identitas muzaki atau mustahik.</p></div>
+        <div class="stats-grid public-stats">
+          <article class="stat-card public-stat"><span>Total Penghimpunan</span><strong id="publicIncome">Rp0</strong><small>Akumulasi penerimaan uang</small></article>
+          <article class="stat-card public-stat"><span>Total Pendistribusian</span><strong id="publicExpense">Rp0</strong><small>Akumulasi penyaluran uang</small></article>
+          <article class="stat-card public-stat"><span>Saldo Dana</span><strong id="publicBalance">Rp0</strong><small>Saldo awal + penerimaan − penyaluran</small></article>
+          <article class="stat-card public-stat"><span>Jumlah Transaksi</span><strong id="publicCount">0</strong><small>Transaksi tercatat</small></article>
+        </div>
+        <div class="public-note"><span class="note-icon">✓</span><div><b>Komitmen transparansi</b><p>Informasi publik hanya menampilkan angka agregat. Nama, kontak, dan rincian pribadi pihak yang memberi maupun menerima bantuan tetap dilindungi.</p></div></div>
+      </section>
+    </main><footer class="public-footer">© <span id="publicYear"></span> UPZ Kecamatan Cipeundeuy · Kabupaten Subang</footer>
+  </div>
+
+  <div id="loginView" class="login-wrap hidden">
     <section class="login-card">
       <div class="brand-mark">UPZ</div>
       <p class="eyebrow">SISTEM INFORMASI KEUANGAN</p>
@@ -21,6 +40,7 @@
         <button class="primary full" type="submit">Masuk ke Aplikasi</button>
       </form>
       <p id="loginMessage" class="message" aria-live="polite"></p>
+      <button id="backPublicBtn" class="text-button" type="button">← Kembali ke halaman umum</button>
       <small class="muted">Akun dibuat dan dikelola melalui Supabase Authentication.</small>
     </section>
   </div>

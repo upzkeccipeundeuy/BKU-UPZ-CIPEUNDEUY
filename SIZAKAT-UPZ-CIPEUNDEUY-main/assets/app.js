@@ -10,12 +10,23 @@
   const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),3000)}
   function message(id,msg,isError=false){$(id).textContent=msg;$(id).style.color=isError?'#b42318':'#0f766e'}
-  function showLogin(){ $('loginView').classList.remove('hidden');$('appView').classList.add('hidden') }
-  function showApp(){ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden') }
+  function showPublic(){ $('publicView').classList.remove('hidden');$('loginView').classList.add('hidden');$('appView').classList.add('hidden') }
+  function showLogin(){ $('publicView').classList.add('hidden');$('loginView').classList.remove('hidden');$('appView').classList.add('hidden') }
+  function showApp(){ $('publicView').classList.add('hidden');$('loginView').classList.add('hidden');$('appView').classList.remove('hidden') }
+  async function loadPublicDashboard(){
+    $('publicYear').textContent=new Date().getFullYear();
+    try{
+      const {data,error}=await client.rpc('get_public_dashboard'); if(error) throw error;
+      const d=Array.isArray(data)?data[0]:data; if(!d) throw new Error('Ringkasan publik belum tersedia.');
+      $('publicIncome').textContent=rupiah(d.total_penghimpunan); $('publicExpense').textContent=rupiah(d.total_pendistribusian);
+      $('publicBalance').textContent=rupiah(d.saldo); $('publicCount').textContent=Number(d.jumlah_transaksi||0).toLocaleString('id-ID');
+      $('publicUpdated').textContent='Diperbarui '+new Date().toLocaleString('id-ID',{dateStyle:'long',timeStyle:'short'});
+    }catch(e){$('publicUpdated').textContent='Ringkasan belum dapat dimuat. Administrator perlu menjalankan SQL pengaturan dashboard publik.';console.warn('Dashboard publik:',e.message)}
+  }
 
   async function initSession(){
     const {data:{session}} = await client.auth.getSession();
-    if(session) await loadProfile(session.user); else showLogin();
+    if(session) await loadProfile(session.user); else {showPublic(); await loadPublicDashboard();}
   }
   async function loadProfile(user){
     currentUser=user;
@@ -171,13 +182,15 @@
   $('reportMonth').value=String(new Date().getMonth()+1).padStart(2,'0');
   $('reportMode').addEventListener('change',()=>{$('reportMonth').classList.toggle('hidden',$('reportMode').value==='year')});
 
+  $('openLoginBtn').addEventListener('click',showLogin);
+  $('backPublicBtn').addEventListener('click',async()=>{showPublic();await loadPublicDashboard()});
   $('loginForm').addEventListener('submit',async e=>{
     e.preventDefault();message('loginMessage','Memeriksa akun...');
     const {data,error}=await client.auth.signInWithPassword({email:$('email').value,password:$('password').value});
     if(error){message('loginMessage',error.message,true);return}
     await loadProfile(data.user);
   });
-  $('logoutBtn').addEventListener('click',async()=>{await client.auth.signOut();currentUser=null;currentProfile=null;showLogin()});
+  $('logoutBtn').addEventListener('click',async()=>{await client.auth.signOut();currentUser=null;currentProfile=null;showPublic();await loadPublicDashboard()});
   document.querySelectorAll('.nav-item').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.page)));
   document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>navigate(b.dataset.goto)));
   $('searchBku').addEventListener('input',renderBku);
@@ -197,6 +210,6 @@
   $('refreshBtn').addEventListener('click',()=>loadBku().then(loadDashboard).catch(e=>toast(e.message)));
   saveForm('incomeForm','penghimpunan','IN','incomeMessage');
   saveForm('expenseForm','pendistribusian','OUT','expenseMessage');
-  client.auth.onAuthStateChange((_event,session)=>{if(!session){showLogin()}});
+  client.auth.onAuthStateChange((_event,session)=>{if(!session){currentUser=null;currentProfile=null;showPublic();loadPublicDashboard()}});
   initSession();
 })();
