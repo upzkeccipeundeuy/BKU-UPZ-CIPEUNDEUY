@@ -3,6 +3,8 @@
 Aplikasi web statis untuk Buku Kas Umum Unit Pengumpul Zakat, menggunakan HTML, CSS, JavaScript, Supabase Auth, dan Supabase Database.
 
 ## Fitur dalam paket
+- Dashboard umum tanpa login dengan ringkasan angka agregat.
+- Dashboard pengelola setelah login melalui Supabase Authentication.
 - Login menggunakan Supabase Auth.
 - Dashboard saldo, total penghimpunan, total pendistribusian, dan jumlah transaksi.
 - Input penghimpunan (Zakat Fitrah, Zakat Mal, Infak, Sedekah, BIS Ramadhan, lainnya).
@@ -17,6 +19,13 @@ Project URL yang digunakan:
 `https://tzwehuerojphqjrygtss.supabase.co`
 
 Catatan: gunakan URL dasar project, bukan URL REST lengkap `/rest/v1/`. Supabase JS akan mengakses endpoint REST secara otomatis.
+
+## Mengaktifkan dashboard umum
+1. Buka Supabase → SQL Editor.
+2. Jalankan isi file `supabase/dashboard_publik.sql` satu kali. Fungsi ini hanya mengembalikan total penghimpunan, total pendistribusian, saldo, dan jumlah transaksi; tidak mengembalikan nama atau rincian pribadi.
+3. Pastikan tabel `penghimpunan`, `pendistribusian`, dan `app_settings` sudah tersedia sesuai struktur aplikasi.
+
+Jika SQL belum dijalankan, halaman umum tetap terbuka tetapi angka ringkasan akan menampilkan pemberitahuan bahwa konfigurasi publik belum selesai.
 
 ## Persiapan Supabase
 1. Pastikan tabel dan view dari SQL database sudah dibuat.
@@ -48,7 +57,8 @@ Alternatif: drag-and-drop folder project ke Netlify Deploys.
 ## Keamanan penting
 - Publishable key memang dirancang untuk digunakan pada aplikasi frontend, tetapi hanya aman jika RLS dan policy database benar.
 - Jangan pernah memasukkan `service_role` key ke GitHub, HTML, atau JavaScript frontend.
-- Semua halaman pada versi ini memerlukan login. Viewer harus diberi role `viewer`; policy database harus mengizinkan akses sesuai rancangan Anda.
+- Halaman publik hanya mengambil ringkasan melalui fungsi `get_public_dashboard`; halaman pengelolaan tetap memerlukan login.
+- Pastikan kebijakan RLS untuk tabel transaksi tetap membatasi akses data rinci kepada pengguna yang berwenang. Jangan membuat policy SELECT anonim untuk tabel penghimpunan atau pendistribusian.
 - Policy SQL sebelumnya membatasi pembacaan ke role authenticated, sehingga dashboard tidak terbuka untuk pengunjung anonim.
 - Versi awal ini belum menyediakan edit/hapus transaksi, ekspor PDF/Excel, kuitansi, atau modul laporan A2/B2/C2A/C2B.
 - Sebelum digunakan untuk pencatatan resmi, lakukan pengujian dan validasi laporan dengan bendahara/pengurus UPZ.
