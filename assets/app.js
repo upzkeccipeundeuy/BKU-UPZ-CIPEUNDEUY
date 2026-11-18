@@ -57,7 +57,8 @@
     if(e1||e2||e3) throw (e1||e2||e3);
     const masuk=(income||[]).filter(x=>x.bentuk_penerimaan==='Uang').reduce((a,x)=>a+Number(x.jumlah),0);
     const keluar=(expense||[]).filter(x=>x.bentuk_penyaluran==='Uang').reduce((a,x)=>a+Number(x.jumlah),0);
-    return {masuk,keluar,saldo:Number(settings?.setting_value||0)+masuk-keluar,count:(income||[]).length+(expense||[]).length};
+    const saldoAwal=Number(settings?.setting_value||0);
+    return {masuk,keluar,saldoAwal,saldo:saldoAwal+masuk-keluar,count:(income||[]).length+(expense||[]).length};
   }
   async function loadDashboard(){
     try{
@@ -93,17 +94,20 @@
     }).sort((a,b)=>String(a.tanggal).localeCompare(String(b.tanggal)));
     const masuk=rows.reduce((s,r)=>s+Number(r.penerimaan||0),0);
     const keluar=rows.reduce((s,r)=>s+Number(r.pengeluaran||0),0);
+    const saldoAwalData=bkuCache.reduce((s,r)=>s+0,0); // placeholder; saldo awal diambil dari pengaturan aplikasi di bawah
     $('periodIncome').textContent=rupiah(masuk);$('periodExpense').textContent=rupiah(keluar);$('periodBalance').textContent=rupiah(masuk-keluar);
     $('periodCount').textContent=rows.length;
+    getTotals().then(t=>{ $('bkuCurrentBalance').textContent=rupiah(t.saldo); }).catch(e=>console.warn('Gagal menghitung sisa saldo:',e.message));
   }
-  function printPeriodReport(){
+  async function printPeriodReport(){
     const mode=$('reportMode').value,year=$('reportYear').value,month=$('reportMonth').value;
     const rows=bkuCache.filter(r=>mode==='year'?String(r.tanggal).slice(0,4)===year:String(r.tanggal).slice(0,7)===`${year}-${month.padStart(2,'0')}`).sort((a,b)=>String(a.tanggal).localeCompare(String(b.tanggal)));
     const masuk=rows.reduce((s,r)=>s+Number(r.penerimaan||0),0),keluar=rows.reduce((s,r)=>s+Number(r.pengeluaran||0),0);
+    const saldoSaatIni=await getTotals();
     const title=mode==='year'?`LAPORAN TAHUNAN ${year}`:`LAPORAN BULAN ${new Date(Number(year),Number(month)-1,1).toLocaleDateString('id-ID',{month:'long',year:'numeric'})}`;
     const body=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(r.tanggal)}</td><td>${escapeHtml(r.nomor_transaksi||'-')}</td><td>${escapeHtml(r.jenis_transaksi)}</td><td>${escapeHtml(r.kategori||'-')}</td><td>${escapeHtml(r.pihak||'-')}</td><td class="num">${Number(r.penerimaan)?rupiah(r.penerimaan):'-'}</td><td class="num">${Number(r.pengeluaran)?rupiah(r.pengeluaran):'-'}</td></tr>`).join('');
     const w=window.open('','_blank','width=1100,height=800');if(!w){toast('Izinkan popup untuk mencetak laporan.');return}
-    w.document.write(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>${title}</title><style>body{font:12px Arial;color:#172b2a;padding:25px}h2,p{text-align:center;margin:5px}table{width:100%;border-collapse:collapse;margin-top:22px}th,td{border:1px solid #bbb;padding:7px;text-align:left}th{background:#eef4f1}.num{text-align:right}.summary{display:flex;gap:25px;margin-top:18px;font-weight:bold}.sign{display:flex;justify-content:space-between;margin:60px 30px 0;text-align:center}.sign div{width:40%}@media print{body{padding:0}}</style></head><body><h2>UNIT PENGUMPUL ZAKAT KECAMATAN CIPEUNDEUY</h2><p>Kabupaten Subang</p><h2>${title}</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>No. Transaksi</th><th>Jenis</th><th>Kategori</th><th>Pihak</th><th>Penerimaan</th><th>Pengeluaran</th></tr></thead><tbody>${body||'<tr><td colspan="8">Tidak ada transaksi pada periode ini.</td></tr>'}</tbody></table><div class="summary"><span>Total Penerimaan: ${rupiah(masuk)}</span><span>Total Pengeluaran: ${rupiah(keluar)}</span><span>Selisih: ${rupiah(masuk-keluar)}</span></div><div class="sign"><div>Mengetahui,<br>Ketua UPZ Kecamatan Cipeundeuy<br><br><br><b>(................................)</b></div><div>Cipeundeuy, ${new Date().toLocaleDateString('id-ID')}<br>Bendahara<br><br><br><b>(................................)</b></div></div><script>window.onload=()=>window.print()</script></body></html>`);
+    w.document.write(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>${title}</title><style>body{font:12px Arial;color:#172b2a;padding:25px}h2,p{text-align:center;margin:5px}table{width:100%;border-collapse:collapse;margin-top:22px}th,td{border:1px solid #bbb;padding:7px;text-align:left}th{background:#eef4f1}.num{text-align:right}.summary{display:flex;gap:25px;margin-top:18px;font-weight:bold}.sign{display:flex;justify-content:space-between;margin:60px 30px 0;text-align:center}.sign div{width:40%}@media print{body{padding:0}}</style></head><body><h2>UNIT PENGUMPUL ZAKAT KECAMATAN CIPEUNDEUY</h2><p>Kabupaten Subang</p><h2>${title}</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>No. Transaksi</th><th>Jenis</th><th>Kategori</th><th>Pihak</th><th>Penerimaan</th><th>Pengeluaran</th></tr></thead><tbody>${body||'<tr><td colspan="8">Tidak ada transaksi pada periode ini.</td></tr>'}</tbody></table><div class="summary"><span>Total Penerimaan: ${rupiah(masuk)}</span><span>Total Pengeluaran: ${rupiah(keluar)}</span><span>Selisih Periode: ${rupiah(masuk-keluar)}</span><span>Sisa Saldo Saat Ini: ${rupiah(saldoSaatIni.saldo)}</span></div><div class="sign"><div>Mengetahui,<br>Ketua UPZ Kecamatan Cipeundeuy<br><br><br><b>(................................)</b></div><div>Cipeundeuy, ${new Date().toLocaleDateString('id-ID')}<br>Bendahara<br><br><br><b>(................................)</b></div></div><script>window.onload=()=>window.print()</script></body></html>`);
     w.document.close();
   }
   async function editTransaction(kind,id){
